@@ -1,0 +1,5 @@
+aiohttp
+asyncpg
+Pillow
+pydantic
+pydantic-settings
