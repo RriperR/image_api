@@ -27,8 +27,9 @@ services:
       - .env
     ports:
       - "8080:8080"
-    # volumes:
-    #   - ./app:/app/app:ro
+    volumes:
+      - ./logs:/app/logs
+    # - ./app:/app/app:ro
 
 volumes:
   pgdata:
