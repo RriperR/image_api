@@ -33,3 +33,4 @@ Traceback (most recent call last):
     raise ValueError("charset must not be in content_type argument")
 ValueError: charset must not be in content_type argument
 2025-10-30 10:40:49,477: -: log: INFO: 172.18.0.1 [30/Oct/2025:10:40:49 +0000] "GET /logs HTTP/1.1" 500 212 "-" "PostmanRuntime/7.46.0"
+2025-10-30 10:41:43,774: -: log: INFO: 172.18.0.1 [30/Oct/2025:10:41:43 +0000] "GET /logs HTTP/1.1" 200 2656 "-" "PostmanRuntime/7.46.0"

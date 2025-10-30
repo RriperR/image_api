@@ -43,8 +43,6 @@ mnt/
 
 # === Project-specific ===
 .env
-.env.docker
-.env.example
 *.csv
 *.xlsx
 *.zip
