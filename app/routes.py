@@ -30,6 +30,8 @@ async def upload_image(request: web.Request) -> web.Response:
       - quality: [1..95], опционально
       - x, y: [1..20000], опционально
     """
+    logger.info("upload started")
+
     settings = request.app["settings"]
     pool: Pool = request.app["pg_pool"]
 
@@ -128,6 +130,9 @@ async def upload_image(request: web.Request) -> web.Response:
         "source_format": source_fmt,
         "filename": filename,
     }
+
+    logger.info("upload finished: width=%s height=%s quality=%s size=%s source=%s",
+                out_w, out_h, used_q, len(jpeg_bytes), source_fmt)
     return web.json_response(payload, status=201)
 
 
@@ -135,6 +140,7 @@ async def upload_image(request: web.Request) -> web.Response:
 async def get_image(request: web.Request) -> web.StreamResponse:
     pool: Pool = request.app["pg_pool"]
     image_id_str = request.match_info["image_id"]
+    logger.info("get image: id=%s", image_id_str)
 
     try:
         image_id = uuid.UUID(image_id_str)
@@ -156,6 +162,8 @@ async def get_image(request: web.Request) -> web.StreamResponse:
 
     resp = web.Response(body=data, content_type=content_type)
     resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+
+    logger.info("get image: id=%s bytes=%s", image_id_str, len(data))
     return resp
 
 
