@@ -54,3 +54,6 @@ mnt/
 *.webp
 *.pdf
 *.mp4
+
+# IDE
+.idea/
