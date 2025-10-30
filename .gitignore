@@ -1,0 +1,58 @@
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.log
+*.sqlite3
+*.db
+
+# === Environments ===
+venv/
+env/
+ENV/
+.venv/
+
+# === IDE / Editor ===
+.idea/
+.vscode/
+*.code-workspace
+
+# === System ===
+.DS_Store
+Thumbs.db
+
+# === Docker ===
+*.pid
+*.seed
+*.bak
+*.swp
+*.tmp
+*.orig
+logs/
+mnt/
+# compiled images or local cache
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+
+# === Project-specific ===
+.env
+.env.docker
+.env.example
+*.csv
+*.xlsx
+*.zip
+*.tar
+*.gz
+*.jpeg
+*.jpg
+*.png
+*.webp
+*.pdf
+*.mp4
