@@ -171,6 +171,7 @@ async def get_image(request: web.Request) -> web.StreamResponse:
 async def read_logs(request: web.Request) -> web.StreamResponse:
     settings = request.app["settings"]
     limit_q = request.query.get("limit")
+
     try:
         limit = int(limit_q) if limit_q is not None else 200
         limit = max(1, min(limit, 10_000))
@@ -179,27 +180,49 @@ async def read_logs(request: web.Request) -> web.StreamResponse:
 
     log_path = settings.LOG_PATH
     if not os.path.exists(log_path):
-        return web.Response(text="(no log file yet)\n", content_type="text/plain; charset=utf-8")
+        return web.Response(text="(no log file yet)\n", content_type="text/plain", charset="utf-8")
 
-    # читаем последние N строк эффективно
-    lines = _tail(log_path, limit)
-    text = "".join(lines)
-    return web.Response(text=text, content_type="text/plain; charset=utf-8")
+    try:
+        lines = _tail(log_path, limit)
+    except Exception:
+        return web.Response(
+            text="(failed to read log file)\n",
+            status=500,
+            content_type="text/plain",
+            charset="utf-8",
+        )
+
+    return web.Response(
+        text="".join(lines),
+        content_type="text/plain",
+        charset="utf-8",
+    )
 
 
-def _tail(path: str, n: int) -> list[str]:
-    # простая реализация tail -n с обратным чтением блоками
+def _tail(path: str, n: int, chunk_size: int = 8192) -> list[str]:
+    """
+    Безопасная реализация tail -n:
+    - Читает файл блоками с конца, не делая отрицательных смещений относительно SEEK_END.
+    - Корректно работает на маленьких/больших файлах.
+    - Возвращает последние n строк в виде списка str (utf-8).
+    """
     size = os.path.getsize(path)
-    block = 4096
+    if size == 0:
+        return []
+
     with open(path, "rb") as f:
+        # Начинаем с конца файла и накапливаем данные в data (слева)
+        pos = size
         data = b""
-        seek = 0
-        while size + seek > 0 and data.count(b"\n") <= n:
-            seek -= block
-            f.seek(seek, os.SEEK_END)
-            data = f.read(-seek) + data
-            if -seek >= size:
-                break
-    lines = data.splitlines(keepends=True)[-n:]
-    # декодируем как utf-8 с безопасной заменой
-    return [line.decode("utf-8", errors="replace") for line in lines]
+        # Читаем, пока не набрали достаточно переводов строки
+        while pos > 0 and data.count(b"\n") <= n:
+            read_size = chunk_size if pos >= chunk_size else pos
+            pos -= read_size
+            f.seek(pos, os.SEEK_SET)  # абсолютное смещение от начала
+            chunk = f.read(read_size)
+            data = chunk + data  # собираем «с конца»
+
+        # Порежем на строки и возьмём хвост
+        tail_lines = data.splitlines(keepends=True)[-n:]
+        # Декодируем безопасно
+        return [line.decode("utf-8", errors="replace") for line in tail_lines]
