@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Union, List
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, PositiveInt, field_validator
 
@@ -16,7 +18,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # --- auth ---
-    API_TOKENS: list[str] = Field(default_factory=list)
+    API_TOKENS: Union[str, List[str]] = Field(default="")
 
     # --- logging ---
     LOG_PATH: str = Field(default="./logs/app.log")
