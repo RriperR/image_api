@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import uuid
 from typing import Any, Optional
 
@@ -10,6 +11,7 @@ from asyncpg import Pool, Record
 
 from .image_service import process_to_jpeg, ImageProcessingError, new_image_id
 from .validators import parse_optional_int, ValidationError
+
 
 logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
@@ -155,3 +157,41 @@ async def get_image(request: web.Request) -> web.StreamResponse:
     resp = web.Response(body=data, content_type=content_type)
     resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return resp
+
+
+@routes.get("/logs")
+async def read_logs(request: web.Request) -> web.StreamResponse:
+    settings = request.app["settings"]
+    limit_q = request.query.get("limit")
+    try:
+        limit = int(limit_q) if limit_q is not None else 200
+        limit = max(1, min(limit, 10_000))
+    except ValueError:
+        raise web.HTTPBadRequest(reason="limit must be integer")
+
+    log_path = settings.LOG_PATH
+    if not os.path.exists(log_path):
+        return web.Response(text="(no log file yet)\n", content_type="text/plain; charset=utf-8")
+
+    # читаем последние N строк эффективно
+    lines = _tail(log_path, limit)
+    text = "".join(lines)
+    return web.Response(text=text, content_type="text/plain; charset=utf-8")
+
+
+def _tail(path: str, n: int) -> list[str]:
+    # простая реализация tail -n с обратным чтением блоками
+    size = os.path.getsize(path)
+    block = 4096
+    with open(path, "rb") as f:
+        data = b""
+        seek = 0
+        while size + seek > 0 and data.count(b"\n") <= n:
+            seek -= block
+            f.seek(seek, os.SEEK_END)
+            data = f.read(-seek) + data
+            if -seek >= size:
+                break
+    lines = data.splitlines(keepends=True)[-n:]
+    # декодируем как utf-8 с безопасной заменой
+    return [line.decode("utf-8", errors="replace") for line in lines]
